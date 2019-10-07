@@ -1,5 +1,6 @@
 from datetime import datetime
 import psutil
+import threading 
 import time
 import wmi
 import subprocess
@@ -31,12 +32,16 @@ logger.info("Start Gateway Bot Management")
 logger.info("Power by. essoft")
 logger.info("Version: %s",app_version)
 
+stackProcessId = []
+
 def findProcess():
     maxMem = 0.00
+    processID = None
     for proc in psutil.process_iter():
         try:
             if proc.name() == appname:
                 processMem = proc.memory_info().rss / (1024 * 1024)
+                stackProcessId.append(proc.pid)
                 if processMem > maxMem:
                     processID = proc.pid
                     maxMem = processMem
@@ -48,10 +53,11 @@ def totalMem():
     sysMem = wmi.WMI ()
     return float(sysMem.Win32_ComputerSystem()[0].TotalPhysicalMemory) / (1024 * 1024)
 
-def checkConnectButton(position1):
-    if (position1 != None):
+def checkConnectButton():
+    position = pyautogui.locateOnScreen(position_image)
+    if (position != None):
         try:
-            position_point = pyautogui.center(position1)
+            position_point = pyautogui.center(position)
             x = position_point.x
             y = position_point.y
             pyautogui.click(x, y)
@@ -59,18 +65,29 @@ def checkConnectButton(position1):
         except TypeError:
             pass
 
+def openPro():
+    subprocess.Popen(gateway_path)
+
 while True:
     time.sleep(interval)
     logger.info("%s : Check time ",datetime.fromtimestamp(time.time()))
     process = findProcess()
-    if (process[0] / totalMem()) > memory_percen:
-        p = psutil.Process(process[1])
-        # p.terminate()
-        logger.info("%s : Memory overflow kill pid at: %s mb", format(datetime.fromtimestamp(time.time())), format(process[0]))
-        # subprocess.call(gateway_path)
-        position = pyautogui.locateOnScreen(position_image)
-        checkConnectButton(position)
-    else: 
-        position = pyautogui.locateOnScreen(position_image)
-        checkConnectButton(position)
+    if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
+        for stk in stackProcessId:
+            try:
+                p = psutil.Process(stk)
+                p.terminate()
+                logger.info("%s : Memory overflow kill pid at: %s", format(datetime.fromtimestamp(time.time())), stk)
+                print(p)
+            except psutil.NoSuchProcess:
+                continue
+        stackProcessId = []
+        openPro()
+        time.sleep(0.5)
+    else:
+        if process[1] == None:
+            openPro()
+            time.sleep(0.5)
         logger.info("%s : Memory it's ok", format(datetime.fromtimestamp(time.time())))
+    checkConnectButton()
+    logger.info("%s : End loop", format(datetime.fromtimestamp(time.time())))
