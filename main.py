@@ -1,4 +1,5 @@
 from datetime import datetime
+import multiprocessing as mp
 import psutil
 import time
 import wmi
@@ -50,17 +51,19 @@ def totalMem():
     sysMem = wmi.WMI ()
     return float(sysMem.Win32_ComputerSystem()[0].TotalPhysicalMemory) / (1024 * 1024)
 
-def checkConnectButton():
-    position = pyautogui.locateOnScreen(position_image)
-    if (position != None):
-        try:
-            position_point = pyautogui.center(position)
-            x = position_point.x
-            y = position_point.y
-            pyautogui.click(x, y)
-            print("Click Connect")
-        except TypeError:
-            pass
+def loopImageProcessing():
+    while True:
+        time.sleep(10)
+        position = pyautogui.locateOnScreen(position_image)
+        if (position != None):
+            try:
+                position_point = pyautogui.center(position)
+                x = position_point.x
+                y = position_point.y
+                pyautogui.click(x, y)
+                print("Click Connect")
+            except TypeError:
+                pass
 
 def openPro():
     subprocess.Popen(gateway_path)
@@ -68,28 +71,31 @@ def openPro():
 def logInfo(input_time, input_state):
     logger.info("%s : %s ", input_time, input_state)
 
-def killPro():
-    for stk in stackProcessId:
-        try:
-            p = psutil.Process(stk)
-            p.terminate()
-            logger.info("%s : Memory overflow kill pid at: %s", format(datetime.fromtimestamp(time.time())), stk)
-            print(p)
-        except psutil.NoSuchProcess:
-            continue
-    stackProcessId = []
-
-while True:
-    time.sleep(interval)
-    logInfo(datetime.fromtimestamp(time.time()), "Check time")
-    process = findProcess()
-    if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
-        killPro()
-        openPro()
-    else:
-        if process[1] == None:
+def loopCheckMem():
+    while True:
+        time.sleep(interval)
+        logInfo(datetime.fromtimestamp(time.time()), "Check time")
+        process = findProcess()
+        if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
+            for stk in stackProcessId:
+                try:
+                    p = psutil.Process(stk)
+                    p.terminate()
+                    logger.info("%s : Memory overflow kill pid at: %s", format(datetime.fromtimestamp(time.time())), stk)
+                    print(p)
+                except psutil.NoSuchProcess:
+                    continue
+            stackProcessId = []
             openPro()
-        logInfo(datetime.fromtimestamp(time.time()), "Memory it's ok")
-    time.sleep(0.5)
-    checkConnectButton()
-    logInfo(datetime.fromtimestamp(time.time()), "End loop")
+        else:
+            if process[1] == None:
+                openPro()
+            logInfo(datetime.fromtimestamp(time.time()), "Memory it's ok")
+        logInfo(datetime.fromtimestamp(time.time()), "End loop")
+
+
+if(__name__=='__main__'):
+    p1 = mp.Process(target=loopCheckMem)
+    p2 = mp.Process(target=loopImageProcessing)
+    p1.start()
+    p2.start()
