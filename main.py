@@ -54,6 +54,7 @@ def totalMem():
 def loopImageProcessing():
     while True:
         time.sleep(10)
+        logInfo(datetime.fromtimestamp(time.time()), "Loop check connect")
         position = pyautogui.locateOnScreen(position_image)
         if (position != None):
             try:
@@ -61,7 +62,7 @@ def loopImageProcessing():
                 x = position_point.x
                 y = position_point.y
                 pyautogui.click(x, y)
-                print("Click Connect")
+                logInfo(datetime.fromtimestamp(time.time()), "Click connect")
             except TypeError:
                 pass
 
