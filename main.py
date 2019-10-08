@@ -1,6 +1,5 @@
 from datetime import datetime
 import psutil
-import threading 
 import time
 import wmi
 import subprocess
@@ -29,8 +28,6 @@ print("Power by. essoft")
 print("Version: ", app_version)
 
 logger.info("Start Gateway Bot Management")
-logger.info("Power by. essoft")
-logger.info("Version: %s",app_version)
 
 stackProcessId = []
 
@@ -71,19 +68,22 @@ def openPro():
 def logInfo(input_time, input_state):
     logger.info("%s : %s ", input_time, input_state)
 
+def killPro():
+    for stk in stackProcessId:
+        try:
+            p = psutil.Process(stk)
+            p.terminate()
+            logger.info("%s : Memory overflow kill pid at: %s", format(datetime.fromtimestamp(time.time())), stk)
+            print(p)
+        except psutil.NoSuchProcess:
+            continue
+
 while True:
     time.sleep(interval)
     logInfo(datetime.fromtimestamp(time.time()), "Check time")
     process = findProcess()
     if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
-        for stk in stackProcessId:
-            try:
-                p = psutil.Process(stk)
-                p.terminate()
-                logger.info("%s : Memory overflow kill pid at: %s", format(datetime.fromtimestamp(time.time())), stk)
-                print(p)
-            except psutil.NoSuchProcess:
-                continue
+        killPro()
         stackProcessId = []
         openPro()
         time.sleep(0.5)
