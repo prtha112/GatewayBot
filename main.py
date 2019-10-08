@@ -77,6 +77,7 @@ def killPro():
             print(p)
         except psutil.NoSuchProcess:
             continue
+    stackProcessId = []
 
 while True:
     time.sleep(interval)
@@ -84,13 +85,11 @@ while True:
     process = findProcess()
     if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
         killPro()
-        stackProcessId = []
         openPro()
-        time.sleep(0.5)
     else:
         if process[1] == None:
             openPro()
-            time.sleep(0.5)
         logInfo(datetime.fromtimestamp(time.time()), "Memory it's ok")
+    time.sleep(0.5)
     checkConnectButton()
     logInfo(datetime.fromtimestamp(time.time()), "End loop")
