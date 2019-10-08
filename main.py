@@ -68,9 +68,12 @@ def checkConnectButton():
 def openPro():
     subprocess.Popen(gateway_path)
 
+def logInfo(input_time, input_state):
+    logger.info("%s : %s ", input_time, input_state)
+
 while True:
     time.sleep(interval)
-    logger.info("%s : Check time ",datetime.fromtimestamp(time.time()))
+    logInfo(datetime.fromtimestamp(time.time()), "Check time")
     process = findProcess()
     if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
         for stk in stackProcessId:
@@ -88,6 +91,6 @@ while True:
         if process[1] == None:
             openPro()
             time.sleep(0.5)
-        logger.info("%s : Memory it's ok", format(datetime.fromtimestamp(time.time())))
+        logInfo(datetime.fromtimestamp(time.time()), "Memory it's ok")
     checkConnectButton()
-    logger.info("%s : End loop", format(datetime.fromtimestamp(time.time())))
+    logInfo(datetime.fromtimestamp(time.time()), "End loop")
