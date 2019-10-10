@@ -1,5 +1,3 @@
-# Python program to illustrate the concept 
-# of threading 
 from datetime import datetime
 import multiprocessing
 import os 
