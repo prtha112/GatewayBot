@@ -1,13 +1,16 @@
+# Python program to illustrate the concept 
+# of threading 
 from datetime import datetime
-import multiprocessing as mp
-import psutil
-import time
-import wmi
-import subprocess
+import multiprocessing
+import os 
 import configparser
-import pyautogui
 import logging
 import logging.handlers
+import wmi
+import time
+import psutil
+import random
+import pyautogui
 
 config = configparser.ConfigParser()
 config.read('config/config.ini')
@@ -48,26 +51,8 @@ def findProcess():
     return maxMem, processID
 
 def totalMem():
-    sysMem = wmi.WMI ()
+    sysMem = wmi.WMI()
     return float(sysMem.Win32_ComputerSystem()[0].TotalPhysicalMemory) / (1024 * 1024)
-
-def loopImageProcessing():
-    while True:
-        time.sleep(10)
-        logInfo(datetime.fromtimestamp(time.time()), "Loop check connect")
-        position = pyautogui.locateOnScreen(position_image)
-        if (position != None):
-            try:
-                position_point = pyautogui.center(position)
-                x = position_point.x
-                y = position_point.y
-                pyautogui.click(x, y)
-                logInfo(datetime.fromtimestamp(time.time()), "Click connect")
-            except TypeError:
-                pass
-
-def openPro():
-    subprocess.Popen(gateway_path)
 
 def logInfo(input_time, input_state):
     logger.info("%s : %s ", input_time, input_state)
@@ -77,7 +62,7 @@ def loopCheckMem():
         time.sleep(interval)
         logInfo(datetime.fromtimestamp(time.time()), "Check time")
         process = findProcess()
-        if ((process[0] / totalMem()) < memory_percen) and process[1] != None:
+        if ((process[0] / totalMem()) > memory_percen) and process[1] != None:
             for stk in stackProcessId:
                 try:
                     p = psutil.Process(stk)
@@ -93,10 +78,43 @@ def loopCheckMem():
                 openPro()
             logInfo(datetime.fromtimestamp(time.time()), "Memory it's ok")
         logInfo(datetime.fromtimestamp(time.time()), "End loop")
+  
+def loopImageProcessing():
+    while True:
+        time.sleep(random.randrange(15, 20))
+        logInfo(datetime.fromtimestamp(time.time()), "Loop check connect")
+        position = pyautogui.locateOnScreen(position_image)
+        if (position != None):
+            try:
+                position_point = pyautogui.center(position)
+                x = position_point.x
+                y = position_point.y
+                pyautogui.click(x, y)
+                logInfo(datetime.fromtimestamp(time.time()), "Click connect")
+            except TypeError:
+                pass
 
-
-if(__name__=='__main__'):
-    p1 = mp.Process(target=loopCheckMem)
-    p2 = mp.Process(target=loopImageProcessing)
-    p1.start()
-    p2.start()
+def processMem(): 
+	loopCheckMem()
+	print("Process running worker1")
+  
+def processConnect(): 
+	loopImageProcessing()
+	print("Process running worker2")
+  
+if __name__ == "__main__": 
+	multiprocessing.freeze_support()
+	p1 = multiprocessing.Process(target=processMem)
+	p2 = multiprocessing.Process(target=processConnect) 
+  
+    # starting processes 
+	p1.start()
+	p2.start() 
+  
+    # process IDs 
+	print("ID of process p1: {}".format(p1.pid))
+	print("ID of process p2: {}".format(p2.pid)) 
+  
+    # wait until processes are finished
+	p1.join()
+	p2.join()
